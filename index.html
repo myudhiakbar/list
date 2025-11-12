@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Form Pemesanan Produk</title>
+  <style>
+    body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #f2f4f8;
+    margin: 0;
+    padding: 20px;
+    }
+
+    form {
+      max-width: 400px;
+      margin: auto;
+      background: #ffffff;
+      padding: 30px;
+      border-radius: 14px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+
+    .order-details-title {
+      text-align: center;
+      font-size: 1.3em;
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 20px;
+    }
+
+    .product-info {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      align-items: center;
+    }
+
+    .product-name {
+      font-weight: bold;
+      color: #2563EB;
+      margin-bottom: 5px;
+    }
+
+    .product-price {
+      color: #1e8e34;
+      font-weight: bold;
+      font-size: 1.1em;
+    }
+
+    .data-section-title {
+      text-align: center;
+      font-weight: bold;
+      color: #333;
+      margin-top: 30px;
+      margin-bottom: 15px;
+    }
+
+    label {
+      font-weight: 600;
+      display: block;
+      margin-bottom: 6px;
+      font-size: 15px;
+      color: #333;
+    }
+
+    input {
+      width: 100%;
+      padding: 11px 0;
+      margin-bottom: 8px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 14px;
+      background-color: #f9f9f9;
+    }
+
+    input::placeholder {
+      text-indent: 15px;
+      color: #999;
+    }
+
+    button#submitOrderBtn {
+      background-color: #28a745;
+      color: white;
+      border: none;
+      padding: 14px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      border-radius: 10px;
+      width: 100%;
+      transition: background 0.3s ease;
+      margin-top: 25px;
+    }
+
+    button#submitOrderBtn:hover {
+      background-color: #1e7e34;
+    }
+
+    .loading-text {
+      text-align: center;
+      font-style: italic;
+      color: #666;
+      display: none;
+      margin-bottom: 15px;
+    }
+
+    #response {
+      text-align: center;
+      font-weight: 500;
+      margin-top: 10px;
+      font-size: 14px;
+    }
+
+    .whatsapp-button {
+      display: block;
+      margin-top: 15px;
+      padding: 12px;
+      background-color: #25D366;
+      color: white;
+      text-align: center;
+      font-size: 14px;
+      border-radius: 10px;
+      text-decoration: none;
+    }
+
+    .whatsapp-button:hover {
+      background-color: #128C7E;
+    }
+
+    .highlight {
+      color: #2563EB;
+      font-weight: bold;
+    }
+
+    /* Popup */
+    .confirmation-popup {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .popup-content {
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      text-align: center;
+    }
+
+    .popup-buttons button {
+      padding: 10px 20px;
+      margin: 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .popup-buttons .yes-button {
+      background-color: #28a745;
+      color: white;
+      border: none;
+    }
+
+    .popup-buttons .no-button {
+      background-color: #dc3545;
+      color: white;
+      border: none;
+    }
+
+    .error-message {
+      color: red;
+      font-size: 0.8em;
+      margin-top: 2px;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+
+  <form id="orderForm">
+    <div class="loading-text" id="loadingText">⏳ Mohon tunggu, sedang diproses...</div>
+
+    <div class="order-details-title">Detail Pesanan</div>
+
+    <div class="product-info">
+      <div class="product-name" id="namaProduk"></div>
+      <div class="product-price" id="hargaProduk"></div>
+    </div>
+
+    <div class="data-section-title">
+      Isi data-data di bawah ini dengan benar untuk administrasi website ini :
+    </div>
+
+    <label>Nama</label>
+    <input id="nama" name="nama" placeholder="Contoh: Yudi" required type="text" />
+    <div class="error-message" id="namaError"></div>
+
+    <label>Email</label>
+    <input id="email" name="email" placeholder="Contoh: emailanda@gmail.com" required type="email" />
+    <div class="error-message" id="emailError"></div>
+
+    <label>Nomor WhatsApp</label>
+    <input id="no_wa" name="no_wa" placeholder="Contoh: 0812000000" required type="text" />
+    <div class="error-message" id="noWaError"></div>
+
+    <input id="produk" name="produk" readonly type="hidden" />
+    <input id="hiddenHarga" name="harga" readonly type="hidden" />
+    <input id="user_agent" name="user_agent" type="hidden" />
+
+    <button id="submitOrderBtn" type="button">Beli Sekarang</button>
+
+    <p id="response"></p>
+
+    <div class="confirmation-popup" id="confirmationPopup">
+      <div class="popup-content">
+        <p>Apakah data yang anda isi sudah benar? Karena nantinya kami akan mengirimkan rincian orderan ke email dan whatsapp anda.</p>
+        <div class="popup-buttons">
+          <button class="yes-button" id="confirmOrderBtn" type="button">Ya, Lanjut Order</button>
+          <button class="no-button" id="cancelOrderBtn" type="button">Belum</button>
+        </div>
+      </div>
+    </div>
+  </form>
+
+  <script>
+    // Ambil parameter dari URL
+    function getQueryParam(key) {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get(key);
+    }
+
+    function slugToName(slug) {
+      return slug.replace(/-/g, ' ').replace(/\b\w/g, v => v.toUpperCase());
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      document.getElementById("user_agent").value = navigator.userAgent;
+
+      const produkParam = getQueryParam("produk");
+      const produkInput = document.getElementById("produk");
+      const namaProdukElement = document.getElementById("namaProduk");
+      const hargaProdukElement = document.getElementById("hargaProduk");
+      const hiddenHargaInput = document.getElementById("hiddenHarga");
+
+      function formatRupiah(angka) {
+        const numberString = angka.toString().replace(/[^,\d]/g, '');
+        const format = numberString.replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.');
+        return 'Rp. ' + format;
+      }
+
+      if (produkParam) {
+        produkInput.value = produkParam;
+        fetch('https://opensheet.elk.sh/1a0vq94boGGoHwR7e8yM9Q-fhFgXHSPTqJK0fKNZ982E/produk')
+          .then(response => response.json())
+          .then(produkList => {
+            const produkTerpilih = produkList.find(p =>
+              p["Slug"]?.toLowerCase() === produkParam.toLowerCase()
+            ) || produkList.find(p =>
+              p["Nama Produk"].toLowerCase() === slugToName(produkParam).toLowerCase()
+            );
+
+            if (produkTerpilih && produkTerpilih["Harga Produk"]) {
+              namaProdukElement.innerText = produkTerpilih["Nama Produk"];
+              const hargaFormatted = formatRupiah(produkTerpilih["Harga Produk"]);
+              hargaProdukElement.innerText = hargaFormatted;
+              hiddenHargaInput.value = produkTerpilih["Harga Produk"];
+            } else {
+              namaProdukElement.innerText = 'Produk tidak ditemukan';
+              hargaProdukElement.innerText = '';
+            }
+          })
+          .catch(err => {
+            namaProdukElement.innerText = 'Gagal memuat produk';
+            console.error("Gagal mengambil data produk:", err);
+          });
+      } else {
+        namaProdukElement.innerText = 'Tidak ada produk dipilih';
+        document.getElementById("orderForm").style.display = "none";
+      }
+    });
+
+    // Validasi dan submit form
+    const submitOrderBtn = document.getElementById("submitOrderBtn");
+    const confirmationPopup = document.getElementById("confirmationPopup");
+    const confirmOrderBtn = document.getElementById("confirmOrderBtn");
+    const cancelOrderBtn = document.getElementById("cancelOrderBtn");
+    const orderForm = document.getElementById("orderForm");
+
+    const namaInput = document.getElementById("nama");
+    const emailInput = document.getElementById("email");
+    const noWaInput = document.getElementById("no_wa");
+    const namaError = document.getElementById("namaError");
+    const emailError = document.getElementById("emailError");
+    const noWaError = document.getElementById("noWaError");
+
+    submitOrderBtn.addEventListener("click", () => {
+      let isValid = true;
+
+      if (namaInput.value.trim() === "") {
+        namaError.innerText = "Kolom ini belum terisi";
+        isValid = false;
+      } else namaError.innerText = "";
+
+      if (emailInput.value.trim() === "") {
+        emailError.innerText = "Kolom ini belum terisi";
+        isValid = false;
+      } else emailError.innerText = "";
+
+      if (noWaInput.value.trim() === "") {
+        noWaError.innerText = "Kolom ini belum terisi";
+        isValid = false;
+      } else noWaError.innerText = "";
+
+      if (isValid) confirmationPopup.style.display = "flex";
+    });
+
+    cancelOrderBtn.addEventListener("click", () => {
+      confirmationPopup.style.display = "none";
+    });
+
+    confirmOrderBtn.addEventListener("click", () => {
+      confirmationPopup.style.display = "none";
+      handleOrderSubmission();
+    });
+
+    function handleOrderSubmission() {
+      const data = new FormData(orderForm);
+      const submitBtn = document.getElementById("submitOrderBtn");
+      const loadingText = document.getElementById("loadingText");
+      const responseText = document.getElementById("response");
+
+      const nama = data.get("nama").trim();
+      const email = data.get("email").trim();
+      let noWa = data.get("no_wa").replace(/\D/g, "");
+
+      if (!email.includes("@") || !email.includes(".")) {
+        emailError.innerText = "Format email tidak valid";
+        return;
+      } else emailError.innerText = "";
+
+      if (noWa.startsWith("0")) noWa = "62" + noWa.substring(1);
+      else if (!noWa.startsWith("62")) noWa = "62" + noWa;
+
+      if (noWa.length < 10) {
+        noWaError.innerText = "Nomor WhatsApp terlalu pendek";
+        return;
+      } else noWaError.innerText = "";
+
+      data.set("no_wa", noWa);
+
+      submitBtn.disabled = true;
+      submitBtn.innerText = "Memesan...";
+      loadingText.style.display = "block";
+      responseText.innerText = "";
+
+      fetch("https://script.google.com/macros/s/AKfycbzUeUWKuZoJArP-EY5OxzZn8xurKR-aHoGvLNWe7O9qkpLp48cFdNxItfY9qg2E8VCF3A/exec", {
+        method: "POST",
+        body: data,
+      })
+        .then(res => res.json())
+        .then(response => {
+          if (response.status === "success") {
+            responseText.style.color = "green";
+            responseText.innerHTML = `✅ Pesanan berhasil!<br>Nama: <span class="highlight">${nama}</span><br>Email: <span class="highlight">${email}</span>`;
+            setTimeout(() => {
+              window.location.href = "https://jalancuan25.blogspot.com/p/thank-you-page-pp-loker.html";
+            }, 2500);
+          } else if (response.status === "quota_exceeded") {
+            responseText.style.color = "red";
+            const whatsappLink = `https://wa.me/${noWa}?text=Mas%20saya%20mau%20order%20produk%20${encodeURIComponent(data.get("produk"))}%2C%20tapi%20infonya%20orderan%20tidak%20bisa%20diproses`;
+            responseText.innerHTML = `⚠️ Mohon maaf, saat ini orderan belum bisa diproses. <a href="${whatsappLink}" class="whatsapp-button">Hubungi Kami di WhatsApp</a>`;
+          } else {
+            responseText.style.color = "red";
+            responseText.innerHTML = "❌ " + response.message;
+          }
+          orderForm.reset();
+        })
+        .catch(() => {
+          responseText.style.color = "red";
+          responseText.innerText = "⚠️ Terjadi kesalahan. Silakan coba lagi.";
+        })
+        .finally(() => {
+          submitBtn.disabled = false;
+          submitBtn.innerText = "Beli Sekarang";
+          loadingText.style.display = "none";
+        });
+    }
+  </script>
+</body>
+</html>
