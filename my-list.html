@@ -65,18 +65,13 @@
     }
 
     input {
-      width: 100%;
-      padding: 11px 0;
+      width: 95%;
+      padding: 14px 0 14px 14px;
       margin-bottom: 8px;
       border: 1px solid #ccc;
       border-radius: 6px;
       font-size: 14px;
       background-color: #f9f9f9;
-    }
-
-    input::placeholder {
-      text-indent: 15px;
-      color: #999;
     }
 
     button#submitOrderBtn {
@@ -233,59 +228,76 @@
   <script>
     // Ambil parameter dari URL
     function getQueryParam(key) {
-      const urlParams = new URLSearchParams(window.location.search);
-      return urlParams.get(key);
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get(key);
+  }
+
+  function slugToName(slug) {
+    return slug.replace(/-/g, ' ').replace(/\b\w/g, v => v.toUpperCase());
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("user_agent").value = navigator.userAgent;
+
+    const produkParam = getQueryParam("produk");
+    const produkInput = document.getElementById("produk");
+    const namaProdukElement = document.getElementById("namaProduk");
+    const hargaProdukElement = document.getElementById("hargaProduk");
+    const hiddenHargaInput = document.getElementById("hiddenHarga");
+
+    function formatRupiah(angka) {
+      if (!angka) return "-";
+      const numberString = angka.toString().replace(/[^,\d]/g, "");
+      const format = numberString.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+      return "Rp. " + format;
     }
 
-    function slugToName(slug) {
-      return slug.replace(/-/g, ' ').replace(/\b\w/g, v => v.toUpperCase());
-    }
+    if (produkParam) {
+      produkInput.value = produkParam;
 
-    document.addEventListener("DOMContentLoaded", () => {
-      document.getElementById("user_agent").value = navigator.userAgent;
+      fetch("https://opensheet.elk.sh/1a0vq94boGGoHwR7e8yM9Q-fhFgXHSPTqJK0fKNZ982E/produk")
+        .then(response => response.json())
+        .then(produkList => {
+          if (!Array.isArray(produkList) || produkList.length === 0) {
+            throw new Error("Data produk kosong atau tidak terbaca");
+          }
 
-      const produkParam = getQueryParam("produk");
-      const produkInput = document.getElementById("produk");
-      const namaProdukElement = document.getElementById("namaProduk");
-      const hargaProdukElement = document.getElementById("hargaProduk");
-      const hiddenHargaInput = document.getElementById("hiddenHarga");
+          const slugLower = produkParam.toLowerCase().trim();
 
-      function formatRupiah(angka) {
-        const numberString = angka.toString().replace(/[^,\d]/g, '');
-        const format = numberString.replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.');
-        return 'Rp. ' + format;
-      }
-
-      if (produkParam) {
-        produkInput.value = produkParam;
-        fetch('https://opensheet.elk.sh/1a0vq94boGGoHwR7e8yM9Q-fhFgXHSPTqJK0fKNZ982E/produk')
-          .then(response => response.json())
-          .then(produkList => {
-            const produkTerpilih = produkList.find(p =>
-              p["Slug"]?.toLowerCase() === produkParam.toLowerCase()
-            ) || produkList.find(p =>
-              p["Nama Produk"].toLowerCase() === slugToName(produkParam).toLowerCase()
+          // Normalisasi dan cari kecocokan fleksibel
+          const produkTerpilih = produkList.find(p => {
+            const slugSheet = (p["Slug"] || "").toLowerCase().trim();
+            const namaSheet = (p["Nama Produk"] || "").toLowerCase().trim();
+            return (
+              slugSheet === slugLower ||
+              namaSheet === slugLower ||
+              namaSheet === slugToName(slugLower).toLowerCase()
             );
-
-            if (produkTerpilih && produkTerpilih["Harga Produk"]) {
-              namaProdukElement.innerText = produkTerpilih["Nama Produk"];
-              const hargaFormatted = formatRupiah(produkTerpilih["Harga Produk"]);
-              hargaProdukElement.innerText = hargaFormatted;
-              hiddenHargaInput.value = produkTerpilih["Harga Produk"];
-            } else {
-              namaProdukElement.innerText = 'Produk tidak ditemukan';
-              hargaProdukElement.innerText = '';
-            }
-          })
-          .catch(err => {
-            namaProdukElement.innerText = 'Gagal memuat produk';
-            console.error("Gagal mengambil data produk:", err);
           });
-      } else {
-        namaProdukElement.innerText = 'Tidak ada produk dipilih';
-        document.getElementById("orderForm").style.display = "none";
-      }
-    });
+
+          if (produkTerpilih) {
+            const namaProduk = produkTerpilih["Nama Produk"] || "Tanpa Nama";
+            const hargaProduk = produkTerpilih["Harga Produk"] || "0";
+
+            namaProdukElement.innerText = namaProduk;
+            hargaProdukElement.innerText = formatRupiah(hargaProduk);
+            hiddenHargaInput.value = hargaProduk;
+          } else {
+            namaProdukElement.innerText = "❌ Produk tidak ditemukan di sheet produk";
+            hargaProdukElement.innerText = "";
+            console.warn("Slug yang dicari:", produkParam);
+            console.warn("Data produk tersedia:", produkList.map(p => p["Slug"]));
+          }
+        })
+        .catch(err => {
+          namaProdukElement.innerText = "⚠️ Gagal memuat produk";
+          console.error("Gagal mengambil data produk:", err);
+        });
+    } else {
+      namaProdukElement.innerText = "Tidak ada produk dipilih";
+      document.getElementById("orderForm").style.display = "none";
+    }
+  });
 
     // Validasi dan submit form
     const submitOrderBtn = document.getElementById("submitOrderBtn");
